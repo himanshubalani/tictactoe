@@ -1,0 +1,380 @@
+import { useState, useEffect } from "react";
+
+const style = `
+  @import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body, #root {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: #0a0a0f;
+  }
+
+  /* ── FULL-VIEWPORT SHELL ── */
+  .shell {
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: radial-gradient(ellipse 80% 55% at 50% -5%, #1a0a2e 0%, #0a0a0f 65%);
+  }
+
+  /* ── CREDIT BAR ── */
+  .credit-bar {
+    flex-shrink: 0;
+    height: 32px;
+    background: rgba(167,139,250,0.12);
+    border-bottom: 1px solid rgba(167,139,250,0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(196,181,253,0.7);
+  }
+  .credit-bar a {
+    color: #c4b5fd;
+    text-decoration: none;
+    font-weight: 500;
+  }
+  .credit-bar a:hover { text-decoration: underline; }
+  .credit-bar .sep { opacity: 0.35; }
+
+  /* ── MAIN AREA (fills remaining height) ── */
+  .main {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.5rem;
+  }
+
+  /* ── DESKTOP: side-by-side card ── */
+  .layout {
+    display: flex;
+    flex-direction: row;
+    align-items: stretch;
+    width: 100%;
+    max-width: 820px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 28px;
+    overflow: hidden;
+  }
+
+  /* LEFT PANEL — title, status, scores, button */
+  .left-panel {
+    flex: 0 0 42%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 1.5rem;
+    padding: 2.5rem 2rem;
+    border-right: 1px solid rgba(255,255,255,0.07);
+  }
+
+  /* RIGHT PANEL — board */
+  .right-panel {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  /* ── MOBILE: single-column ── */
+  @media (max-width: 640px) {
+    .main { padding: 1rem; }
+
+    .layout {
+      flex-direction: column;
+      max-width: 400px;
+      border-radius: 22px;
+    }
+
+    .left-panel {
+      flex: none;
+      border-right: none;
+      border-bottom: 1px solid rgba(255,255,255,0.07);
+      padding: 1.5rem 1.25rem;
+      gap: 1rem;
+    }
+
+    .right-panel { padding: 1.25rem; }
+  }
+
+  /* ── TITLE ── */
+  .title {
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    color: #ffffff;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .title em { font-style: italic; color: #a78bfa; }
+
+  /* ── STATUS PILL ── */
+  .status-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    border: 1px solid;
+    transition: all 0.4s ease;
+    width: fit-content;
+  }
+  .status-pill.turn-x  { background: rgba(236,72,153,0.12);  border-color: rgba(236,72,153,0.3);  color: #f9a8d4; }
+  .status-pill.turn-o  { background: rgba(99,102,241,0.12);  border-color: rgba(99,102,241,0.3);  color: #a5b4fc; }
+  .status-pill.winner  { background: rgba(52,211,153,0.12);  border-color: rgba(52,211,153,0.3);  color: #6ee7b7; animation: pulse-win 1.5s ease-in-out infinite; }
+  .status-pill.draw    { background: rgba(251,191,36,0.1);   border-color: rgba(251,191,36,0.25); color: #fde68a; }
+
+  @keyframes pulse-win {
+    0%,100% { box-shadow: 0 0 0 0 rgba(52,211,153,0.25); }
+    50%      { box-shadow: 0 0 0 8px rgba(52,211,153,0); }
+  }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .dot.x    { background: #f472b6; }
+  .dot.o    { background: #818cf8; }
+  .dot.win  { background: #34d399; }
+  .dot.draw { background: #fbbf24; }
+
+  /* ── SCORES ── */
+  .scores {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 8px;
+  }
+  .score-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 12px;
+    padding: 0.6rem 0.75rem;
+    text-align: center;
+    transition: border-color 0.3s ease, background 0.3s ease;
+  }
+  .score-card.active-x { border-color: rgba(244,114,182,0.3); background: rgba(244,114,182,0.05); }
+  .score-card.active-o { border-color: rgba(129,140,248,0.3); background: rgba(129,140,248,0.05); }
+  .score-label { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; margin-bottom: 2px; }
+  .score-card:first-child .score-label { color: #f9a8d4; }
+  .score-card:last-child  .score-label { color: #a5b4fc; }
+  .score-num { font-family: 'DM Serif Display', serif; font-size: 1.8rem; color: #fff; line-height: 1; }
+  .vs { font-size: 0.7rem; color: rgba(255,255,255,0.25); font-weight: 300; letter-spacing: 0.1em; text-align: center; }
+
+  /* ── RESET BUTTON ── */
+  .reset-btn {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: rgba(167,139,250,0.1);
+    border: 1px solid rgba(167,139,250,0.25);
+    border-radius: 12px;
+    color: #c4b5fd;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 0.88rem;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+  .reset-btn:hover  { background: rgba(167,139,250,0.18); border-color: rgba(167,139,250,0.45); color: #e9d5ff; transform: translateY(-1px); }
+  .reset-btn:active { transform: translateY(0); }
+
+  /* ── BOARD ── */
+  .board-wrap {
+    width: 100%;
+    max-width: 340px;
+  }
+  .board {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    padding: 14px;
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 20px;
+  }
+  .square {
+    aspect-ratio: 1;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-family: 'DM Serif Display', serif;
+    font-size: clamp(1.8rem, 5vw, 2.8rem);
+    transition: background 0.2s ease, transform 0.15s ease, border-color 0.2s ease;
+    user-select: none;
+  }
+  .square:hover:not(.filled):not(.blocked) {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.14);
+    transform: scale(1.04);
+  }
+  .square.filled  { cursor: default; }
+  .square.blocked { cursor: not-allowed; }
+  .square.x-mark  { color: #f472b6; }
+  .square.o-mark  { color: #818cf8; }
+  .square.winning {
+    background: rgba(52,211,153,0.1) !important;
+    border-color: rgba(52,211,153,0.4) !important;
+    animation: glow-win 0.6s ease forwards;
+  }
+  .square.winning.x-mark,
+  .square.winning.o-mark { color: #34d399; }
+
+  @keyframes glow-win {
+    0%   { box-shadow: 0 0 0 0 rgba(52,211,153,0); }
+    60%  { box-shadow: 0 0 24px 4px rgba(52,211,153,0.25); }
+    100% { box-shadow: 0 0 12px 2px rgba(52,211,153,0.15); }
+  }
+
+  .mark-enter { animation: mark-in 0.25s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+  @keyframes mark-in {
+    from { opacity: 0; transform: scale(0.3) rotate(-15deg); }
+    to   { opacity: 1; transform: scale(1)   rotate(0deg); }
+  }
+`;
+
+function calculateWinner(squares) {
+  const lines = [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]];
+  for (const [a,b,c] of lines) {
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c])
+      return { winner: squares[a], line: [a,b,c] };
+  }
+  return null;
+}
+
+const Square = ({ value, onClick, isWinning, isBlocked }) => {
+  const cls = ["square",
+    value ? "filled" : "",
+    isBlocked && !value ? "blocked" : "",
+    value === "X" ? "x-mark" : value === "O" ? "o-mark" : "",
+    isWinning ? "winning" : ""
+  ].filter(Boolean).join(" ");
+  return (
+    <button className={cls} onClick={onClick} aria-label={value || "empty"}>
+      {value && <span className="mark-enter">{value}</span>}
+    </button>
+  );
+};
+
+export default function App() {
+  const [board, setBoard] = useState(Array(9).fill(null));
+  const [xIsNext, setXIsNext] = useState(true);
+  const [scores, setScores] = useState({ X: 0, O: 0 });
+
+  const result   = calculateWinner(board);
+  const winner   = result?.winner;
+  const winLine  = result?.line || [];
+  const isDraw   = !winner && board.every(s => s !== null);
+  const gameOver = winner || isDraw;
+
+  useEffect(() => {
+    if (winner) setScores(prev => ({ ...prev, [winner]: prev[winner] + 1 }));
+  }, [winner]);
+
+  const handleClick = (i) => {
+    if (board[i] || gameOver) return;
+    const next = [...board];
+    next[i] = xIsNext ? "X" : "O";
+    setBoard(next);
+    setXIsNext(!xIsNext);
+  };
+
+  const reset = () => { setBoard(Array(9).fill(null)); setXIsNext(true); };
+
+  const pillClass = winner ? "status-pill winner" : isDraw ? "status-pill draw" : xIsNext ? "status-pill turn-x" : "status-pill turn-o";
+  const pillDot   = winner ? "win" : isDraw ? "draw" : xIsNext ? "x" : "o";
+  const pillText  = winner ? `${winner} wins the round` : isDraw ? "It's a draw" : `${xIsNext ? "X" : "O"}'s turn`;
+
+  return (
+    <>
+      <style>{style}</style>
+      <div className="shell">
+
+        {/* CREDIT BAR */}
+        <div className="credit-bar">
+          Made by&nbsp;
+          <a href="https://www.himanshubalani.com" target="_blank" rel="noopener noreferrer">
+            himanshubalani.com
+          </a>
+          <span className="sep">|</span>
+          Read&nbsp;
+          <a href="https://blog.himanshubalani.com/" target="_blank" rel="noopener noreferrer">
+            Blog
+          </a>
+        </div>
+
+        {/* MAIN */}
+        <div className="main">
+          <div className="layout">
+
+            {/* LEFT — info */}
+            <div className="left-panel">
+              <div>
+                <h1 className="title">Tic <em>Tac</em> Toe</h1>
+              </div>
+
+              <div className={pillClass}>
+                <span className={`dot ${pillDot}`} />
+                {pillText}
+              </div>
+
+              <div className="scores">
+                <div className={`score-card ${!gameOver && xIsNext ? "active-x" : ""}`}>
+                  <div className="score-label">Player X</div>
+                  <div className="score-num">{scores.X}</div>
+                </div>
+                <div className="vs">VS</div>
+                <div className={`score-card ${!gameOver && !xIsNext ? "active-o" : ""}`}>
+                  <div className="score-label">Player O</div>
+                  <div className="score-num">{scores.O}</div>
+                </div>
+              </div>
+
+              <button className="reset-btn" onClick={reset}>
+                {gameOver ? "Play next round" : "Restart game"}
+              </button>
+            </div>
+
+            {/* RIGHT — board */}
+            <div className="right-panel">
+              <div className="board-wrap">
+                <div className="board">
+                  {board.map((val, i) => (
+                    <Square
+                      key={i}
+                      value={val}
+                      onClick={() => handleClick(i)}
+                      isWinning={winLine.includes(i)}
+                      isBlocked={!!gameOver}
+                    />
+                  ))}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </>
+  );
+}
