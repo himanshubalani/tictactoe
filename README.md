@@ -1,16 +1,59 @@
-# React + Vite
+# Tic Tac Toe
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A sleek, responsive Tic Tac Toe game built with React. Features a dark glassmorphic UI with smooth animations, persistent score tracking across rounds, and a split-panel desktop layout.
 
-Currently, two official plugins are available:
+**Live Demo:** https://www.himanshubalani.com/tictactoe
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Features
 
-## React Compiler
+- **Two-player gameplay:** Classic X vs O, with per-round score tracking that persists across games so you can play a full session without losing the tally.
+- **Win detection:** Winning squares highlight with a green glow animation. A status pill updates in real time to show whose turn it is, who won, or when a round ends in a draw.
+- **Responsive layout:** On desktop, the info panel (title, status, scores, controls) sits on the left with the board on the right. On mobile, the layout stacks into a single column for easy thumb access.
+- **Polished animations:** Pieces spring onto the board with a scale and rotate entrance. The active player's score card glows to make the current turn always clear at a glance.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Technology Stack
 
-## Expanding the ESLint configuration
+- React (via Vite)
+- Plain JavaScript (JSX)
+- CSS-in-JS (scoped `<style>` tag, no external CSS framework)
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Local Setup
+
+To run this project locally, follow these steps:
+
+1. Clone the repository:
+
+```
+git clone https://github.com/himanshubalani/tictactoe.git
+```
+
+2. Navigate to the project directory:
+
+```
+cd tictactoe
+```
+
+3. Install the dependencies:
+
+```
+npm install
+```
+
+4. Start the local development server:
+
+```
+npm run dev
+```
+
+## Deployment
+
+This project is configured to deploy directly to GitHub Pages using the `gh-pages` package. To deploy a new version to the live site, run:
+
+```
+npm run deploy
+```
+
+## Author
+
+Designed and developed by [Himanshu Balani](https://www.himanshubalani.com/).  
+Created as part of the Web Dev Cohort 2026.
